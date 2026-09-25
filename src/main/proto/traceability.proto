@@ -1,0 +1,57 @@
+syntax = "proto3";
+
+package traceability;
+
+option java_multiple_files = true;
+option java_package = "org.example.grpc";
+option java_outer_classname = "TraceabilityProto";
+
+// Service til at slå sporbarhed op mellem dyr og produkter.
+//
+// Sporbarhedskaeden er: Animal -> Part (skaaret ud, lagt i en Tray)
+//                        -> Tray -> Product (pakket ud fra en eller flere trays)
+//
+// En tray kan indeholde dele fra flere dyr, og et produkt kan bestaa af
+// flere trays -> relationen mellem Animal og Product er mange-til-mange.
+// "GetAnimalsForProduct" returnerer derfor ALLE dyr, produktet potentielt
+// indeholder dele fra (relevant for tilbagekaldelser af produkter).
+service TraceabilityService {
+  // Find registreringsnumre for alle dyr, der kan indgaa i et givet produkt.
+  rpc GetAnimalsForProduct (ProductRequest) returns (AnimalListResponse);
+
+  // Find alle produkter, som et givet dyr kan indgaa i.
+  // Bruges bl.a. til tilbagekaldelser: "hvilke produkter skal kaldes tilbage,
+  // hvis der er problemer med dette dyr?"
+  rpc GetProductsForAnimal (AnimalRequest) returns (ProductListResponse);
+}
+
+message ProductRequest {
+  int64 product_id = 1;
+}
+
+message AnimalRequest {
+  // Dyrets registreringsnummer, tildelt ved ankomst (station 1).
+  string registration_number = 1;
+}
+
+message AnimalInfo {
+  int64 id = 1;
+  string registration_number = 2;
+  double weight_kg = 3;
+  string species = 4;
+  string arrived_at = 5; // ISO-8601 tidsstempel
+}
+
+message AnimalListResponse {
+  repeated AnimalInfo animals = 1;
+}
+
+message ProductInfo {
+  int64 id = 1;
+  string product_type = 2;
+  string packed_at = 3; // ISO-8601 tidsstempel
+}
+
+message ProductListResponse {
+  repeated ProductInfo products = 1;
+}
